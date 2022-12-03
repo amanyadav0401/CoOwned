@@ -109,6 +109,8 @@ contract CoOwnNFT is ERC721URIStorageUpgradeable, Ownable, ReentrancyGuard{
         uint amount = msg.value-fee;
         (bool sent, bytes memory data) = addedProperties.lister.call{value: amount}("");
         addedProperties.fractionsLeft -= _fractions;
+        totalPropertiesOwned[msg.sender].allProperties.push(_tokenId);
+        totalPropertiesOwned[msg.sender].fractionsInProperty[_tokenId]= _fractions;
         require(sent);
         return (sent,data);
     }
