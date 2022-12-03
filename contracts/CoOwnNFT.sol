@@ -12,8 +12,14 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 contract CoOwnNFT is ERC721URIStorageUpgradeable, Ownable, ReentrancyGuard{
     address private vaultFactory;
-    mapping(address => mapping(uint256=>uint256)) private listedProperties;
-    uint count;
+
+    mapping(address => ListedProperties) listedProperties;
+
+    uint public count;
+
+    struct ListedProperties{
+        uint[] tokenIds;
+    }
 
     struct AddedProperties{
         uint propertyNo;
@@ -30,7 +36,7 @@ contract CoOwnNFT is ERC721URIStorageUpgradeable, Ownable, ReentrancyGuard{
     }
 
     mapping(uint=>AddedProperties) public Properties;
-    mapping(address=>userOwnership) totalPropertiesOwned; 
+    mapping(address=>userOwnership)  totalPropertiesOwn; 
     mapping(uint=>address) private vaultAddress;
 
     function initialize(
@@ -77,6 +83,7 @@ contract CoOwnNFT is ERC721URIStorageUpgradeable, Ownable, ReentrancyGuard{
         Properties[count].fractionsLeft = _fractionSupply;
         Properties[count].lister = msg.sender;
         Properties[count].pricePerFraction = _pricePerFraction;
+        listedProperties[msg.sender].tokenIds.push(count);
         count++;
         // listedProperties[msg.sender][count] = count; 
     }
@@ -86,10 +93,6 @@ contract CoOwnNFT is ERC721URIStorageUpgradeable, Ownable, ReentrancyGuard{
         _burn(_tokenId);
     }
 
-   function viewListedProperties(address _lister)external view{
-        require(_lister != address(0),"ZA");//Zero address
-        listedProperties[_lister];
-   }
 
     // function sendinNotification(address _to) public {
     //     IPUSHCommInterface(0xb3971BCef2D791bc4027BbfedFb47319A4AAaaAa)
@@ -109,11 +112,25 @@ contract CoOwnNFT is ERC721URIStorageUpgradeable, Ownable, ReentrancyGuard{
         uint amount = msg.value-fee;
         (bool sent, bytes memory data) = addedProperties.lister.call{value: amount}("");
         addedProperties.fractionsLeft -= _fractions;
-        totalPropertiesOwned[msg.sender].allProperties.push(_tokenId);
-        totalPropertiesOwned[msg.sender].fractionsInProperty[_tokenId]= _fractions;
+        totalPropertiesOwn[msg.sender].allProperties.push(_tokenId);
+        totalPropertiesOwn[msg.sender].fractionsInProperty[_tokenId]= _fractions;
         require(sent);
         return (sent,data);
     }
+
+    function totalPropertiesOwned(address _address) public view returns(uint[] memory){
+        return totalPropertiesOwn[_address].allProperties;
+    }
+
+    function totalPropertiesListed(address _address) public view returns(uint[] memory){
+        return listedProperties[_address].tokenIds;
+    }
+
+    function fractionsOwnedInProperty(uint _tokenId, address _address) public view returns(uint) {
+        return totalPropertiesOwn[_address].fractionsInProperty[_tokenId];
+    }
+
+
 
     // function rentCoowned() external public {
 

@@ -26,6 +26,14 @@ describe("Test", ()=>{
         console.log("Property: ", await nft.Properties(1));
         await nft.connect(signers[1]).buyFraction(1,2,{value: expandTo18Decimals(6)});
         console.log("Fractions Sold", await nft.Properties(1));
+        await nft.connect(owner).addProperty("House","HOW","HOUSE",4,expandTo18Decimals(3));
+        console.log("Property: ", await nft.Properties(2));
+        console.log("Total properties listed",await nft.totalPropertiesListed(owner.address));
+        console.log("Total properties owned",await nft.totalPropertiesOwned(signers[1].address));
+        console.log("Fractions Owned", await nft.fractionsOwnedInProperty(1,signers[1].address));
+
+
+
     })
 
 })
