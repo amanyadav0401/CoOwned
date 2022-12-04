@@ -5,10 +5,7 @@ import {
   expandTo6Decimals,
 } from "../test/utilities/utilities";
 import {
-  SaitaStaking,
-  SaitaStaking__factory,
-  ShiryoInu,
-  ShiryoInu__factory
+  CoOwnedRental,
 } from "../typechain";
 
 function sleep(ms: any) {
@@ -16,13 +13,11 @@ function sleep(ms: any) {
 }
 async function main() {
   // We get the contract to deploy
-  const owner = "0x8a4E0e0C516B879084f047AE7428cA4a246Ad86A";
   
-  const shiro = await ethers.getContractFactory("ShiryoInu");
-  const shiryo = await shiro.deploy();
+  const rental = await ethers.getContractFactory("CoOwnedRental");
+  const Rental = await rental.deploy();
   await sleep(4000);
-//   await staking.initialize("0x6410285e47A98D5885169CB1f120BA976724C370");
-  console.log("SaitaStaking Deployed", shiryo.address);
+  console.log("Rental Deployed", Rental.address);
 }
 
 main()
@@ -31,7 +26,3 @@ main()
     console.error(error);
     process.exit(1);
   });
-
-
-//   Token1 0x82A902CA9F6690176bcb97a0ae7360A85317D51E
-//   SaitaMask 0xaD254d1019D4db873Ca7eD0Ff253602bCe102589

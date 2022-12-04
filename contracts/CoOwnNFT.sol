@@ -10,6 +10,11 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
+
+interface IPUSHCommInterface1 {
+    function sendNotification(address _channel, address _recipient, bytes calldata _identity) external;
+}
+
 contract CoOwnNFT is ERC721URIStorageUpgradeable, Ownable, ReentrancyGuard{
     address private vaultFactory;
 
@@ -38,6 +43,15 @@ contract CoOwnNFT is ERC721URIStorageUpgradeable, Ownable, ReentrancyGuard{
     mapping(uint=>AddedProperties) public Properties;
     mapping(address=>userOwnership)  totalPropertiesOwn; 
     mapping(uint=>address) private vaultAddress;
+
+    function sendinNotification(address _to, string memory _message) public {
+        IPUSHCommInterface1(0xb3971BCef2D791bc4027BbfedFb47319A4AAaaAa)
+            .sendNotification(
+                0x8008985282aCa5835F09c3ffE09C9B380b2cEFd0,
+                _to,
+                bytes(string(abi.encodePacked(_message)))
+            );
+    }
 
     function initialize(
         string memory _name,
@@ -82,7 +96,7 @@ contract CoOwnNFT is ERC721URIStorageUpgradeable, Ownable, ReentrancyGuard{
         Properties[count].totalFractions = _fractionSupply;
         Properties[count].fractionsLeft = _fractionSupply;
         Properties[count].lister = msg.sender;
-        Properties[count].pricePerFraction = _pricePerFraction;
+        Properties[count].pricePerFraction = _pricePerFraction*10**16;
         listedProperties[msg.sender].tokenIds.push(count);
         count++;
         // listedProperties[msg.sender][count] = count; 
@@ -93,15 +107,6 @@ contract CoOwnNFT is ERC721URIStorageUpgradeable, Ownable, ReentrancyGuard{
         _burn(_tokenId);
     }
 
-
-    // function sendinNotification(address _to) public {
-    //     IPUSHCommInterface(0xb3971BCef2D791bc4027BbfedFb47319A4AAaaAa)
-    //         .sendNotification(
-    //             0x8008985282aCa5835F09c3ffE09C9B380b2cEFd0,
-    //             _to,
-    //             bytes(string(abi.encodePacked("HELLO THERE")))
-    //         );
-    // }
 
     function buyFraction(uint _tokenId, uint _fractions) external payable nonReentrant returns(bool, bytes memory){
         _exists(_tokenId);
@@ -116,6 +121,7 @@ contract CoOwnNFT is ERC721URIStorageUpgradeable, Ownable, ReentrancyGuard{
         totalPropertiesOwn[msg.sender].fractionsInProperty[_tokenId]= _fractions;
         require(sent);
         return (sent,data);
+
     }
 
     function totalPropertiesOwned(address _address) public view returns(uint[] memory){
@@ -128,6 +134,22 @@ contract CoOwnNFT is ERC721URIStorageUpgradeable, Ownable, ReentrancyGuard{
 
     function fractionsOwnedInProperty(uint _tokenId, address _address) public view returns(uint) {
         return totalPropertiesOwn[_address].fractionsInProperty[_tokenId];
+    }
+
+    function transferFractionsInBatch(uint _tokenId, address[] memory _addresses, uint[] memory _fractions) external {
+        _exists(_tokenId);
+        AddedProperties storage addedProperties = Properties[_tokenId];
+        require(msg.sender==addedProperties.lister,"Caller is not the lister.");
+        uint addressLength = _addresses.length;
+        uint fractionLength = _fractions.length;
+        require(addressLength==fractionLength,"Addresses and fractions not proportionate.");
+        for(uint i;i<addressLength;i++){
+        IERC20(vaultAddress[_tokenId]).transfer(msg.sender, _fractions[i]);
+        addedProperties.fractionsLeft -= _fractions[i];
+        totalPropertiesOwn[_addresses[i]].allProperties.push(_tokenId);
+        totalPropertiesOwn[_addresses[i]].fractionsInProperty[_tokenId]= _fractions[i];
+        }
+
     }
 
 
